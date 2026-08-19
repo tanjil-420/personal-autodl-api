@@ -1,24 +1,19 @@
-const express = require("express");
-const cors = require("cors");
-const downloaderRoute = require("./routes/downloader");
+const express = require('express');
+const alldlHandler = require('./lib/alldl');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
 app.use(express.json());
 
-// Root Route
-app.get("/", (req, res) => {
-  res.json({
-    status: true,
-    message: "Personal AutoDL API is running!"
-  });
-});
+app.get('/ytb', alldlHandler.ytb);
+app.get('/facebook', alldlHandler.facebook);
+app.get('/tiktok', alldlHandler.tiktok);
+app.get('/instagram', alldlHandler.instagram);
+app.get('/alldl', alldlHandler.alldl);
 
-// Downloader Router Connection (/downloader/alldl)
-app.use("/downloader", downloaderRoute);
+app.get('/', alldlHandler.root);
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });

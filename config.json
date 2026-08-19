@@ -1,0 +1,11 @@
+{
+    "dev": "Tenzo",
+    "version": "1.0.0",
+    "api_name": "alldl",
+    "platforms": {
+        "youtube": true,
+        "facebook": true,
+        "tiktok": true,
+        "instagram": true
+    }
+}
