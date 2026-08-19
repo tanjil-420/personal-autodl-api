@@ -6,32 +6,31 @@ const ytDlp = require('yt-dlp-exec');
 
 const router = express.Router();
 
-// Render will create temporary files if YT_COOKIES are present.
 function getCookiesPath() {
     const cookiesEnv = process.env.YT_COOKIES;
     if (!cookiesEnv) return null;
     
-    const cookiePath = path.join('/tmp', 'youtube_cookies.txt');
-    try {
-        let content = cookiesEnv;
-        // Check if string is NOT raw netscape format, then try Base64 decode
-        if (!cookiesEnv.includes('Netscape') && !cookiesEnv.includes('DOMAIN') && !cookiesEnv.startsWith('#')) {
-            try {
-                content = Buffer.from(cookiesEnv, 'base64').toString('utf-8');
-            } catch (e) {
-                content = cookiesEnv;
-            }
-        }
-            
-        fs.writeFileSync(cookiePath, content);
+    if (cookiesEnv.includes('# Netscape')) {
+        const cookiePath = path.join('/tmp', 'youtube_cookies.txt');
+        fs.writeFileSync(cookiePath, cookiesEnv);
         return cookiePath;
-    } catch (e) {
-        console.error('Error writing cookies:', e);
-        return null;
     }
+
+    try {
+        const decoded = Buffer.from(cookiesEnv, 'base64').toString('utf-8');
+        if (decoded.includes('# Netscape')) {
+            const cookiePath = path.join('/tmp', 'youtube_cookies.txt');
+            fs.writeFileSync(cookiePath, decoded);
+            return cookiePath;
+        }
+    } catch (e) {
+        console.error('Cookie decode error:', e.message);
+    }
+
+    console.warn('⚠️ YT_COOKIES format is invalid. Skipping cookies.');
+    return null;
 }
 
-// ১. Cobalt API Method
 async function downloadWithCobalt(videoUrl) {
     const instances = [
         'https://api.cobalt.tools',
@@ -68,7 +67,6 @@ async function downloadWithCobalt(videoUrl) {
     throw new Error('Cobalt failed');
 }
 
-// ২. Invidious API Method (YouTube Specific)
 async function downloadWithInvidious(videoUrl) {
     let videoId = '';
     if (videoUrl.includes('youtu.be/')) {
@@ -107,7 +105,6 @@ async function downloadWithInvidious(videoUrl) {
     throw new Error('Invidious failed');
 }
 
-// Main Endpoint
 router.get('/alldl', async (req, res) => {
     const videoUrl = req.query.url;
 
@@ -115,7 +112,6 @@ router.get('/alldl', async (req, res) => {
         return res.status(400).json({ status: false, message: 'URL query parameter is required' });
     }
 
-    // Attempt 1: Cobalt API
     try {
         const result = await downloadWithCobalt(videoUrl);
         return res.json(result);
@@ -123,7 +119,6 @@ router.get('/alldl', async (req, res) => {
         console.log('Cobalt failed, trying Invidious...');
     }
 
-    // Attempt 2: Invidious API (YouTube Specific)
     try {
         const result = await downloadWithInvidious(videoUrl);
         return res.json(result);
@@ -131,13 +126,13 @@ router.get('/alldl', async (req, res) => {
         console.log('Invidious failed, trying yt-dlp...');
     }
 
-    // Attempt 3: yt-dlp (with Cookie support)
     try {
         const options = {
             dumpSingleJson: true,
             noWarnings: true,
             noCheckCertificate: true,
-            preferFreeFormats: true
+            preferFreeFormats: true,
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
         };
 
         const cookiePath = getCookiesPath();
