@@ -10,10 +10,13 @@ app.use(express.json());
 
 // Root Route
 app.get("/", (req, res) => {
-  res.json({ status: true, message: "Personal AutoDL API is running!" });
+  res.json({
+    status: true,
+    message: "Personal AutoDL API is running!"
+  });
 });
 
-// Connect downloader.js route
+// Downloader Router Connection (/downloader/alldl)
 app.use("/downloader", downloaderRoute);
 
 app.listen(PORT, () => {
