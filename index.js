@@ -8,15 +8,10 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Home Route
 app.get("/", (req, res) => {
-  res.json({
-    status: true,
-    message: "Personal AutoDL API is running!"
-  });
+  res.json({ status: true, message: "Personal AutoDL API is running!" });
 });
 
-// Downloader Route
 app.get("/downloader/alldl", async (req, res) => {
   const { url } = req.query;
 
@@ -31,10 +26,11 @@ app.get("/downloader/alldl", async (req, res) => {
     const output = await ytDlp(url, {
       dumpSingleJson: true,
       noWarnings: true,
-      noCallHome: true,
       noCheckCertificate: true,
-      preferFreeFormats: true,
-      youtubeSkipDashManifest: true
+      addHeader: [
+        "user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+      ],
+      extractorArgs: "youtube:player_client=mweb,android"
     });
 
     let directUrl = output.url;
