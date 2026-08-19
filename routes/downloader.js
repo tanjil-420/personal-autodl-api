@@ -13,9 +13,15 @@ function getCookiesPath() {
     
     const cookiePath = path.join('/tmp', 'youtube_cookies.txt');
     try {
-        const content = cookiesEnv.startsWith('#') 
-            ? cookiesEnv 
-            : Buffer.from(cookiesEnv, 'base64').toString('utf-8');
+        let content = cookiesEnv;
+        // Check if string is NOT raw netscape format, then try Base64 decode
+        if (!cookiesEnv.includes('Netscape') && !cookiesEnv.includes('DOMAIN') && !cookiesEnv.startsWith('#')) {
+            try {
+                content = Buffer.from(cookiesEnv, 'base64').toString('utf-8');
+            } catch (e) {
+                content = cookiesEnv;
+            }
+        }
             
         fs.writeFileSync(cookiePath, content);
         return cookiePath;
@@ -62,13 +68,15 @@ async function downloadWithCobalt(videoUrl) {
     throw new Error('Cobalt failed');
 }
 
-// ২. Invidious API Method (YouTube Fallback)
+// ২. Invidious API Method (YouTube Specific)
 async function downloadWithInvidious(videoUrl) {
     let videoId = '';
     if (videoUrl.includes('youtu.be/')) {
         videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
     } else if (videoUrl.includes('v=')) {
         videoId = videoUrl.split('v=')[1].split('&')[0];
+    } else if (videoUrl.includes('shorts/')) {
+        videoId = videoUrl.split('shorts/')[1].split('?')[0];
     }
 
     if (!videoId) throw new Error('Not a valid YouTube URL');
@@ -156,4 +164,3 @@ router.get('/alldl', async (req, res) => {
 });
 
 module.exports = router;
-          
